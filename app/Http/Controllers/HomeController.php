@@ -5,6 +5,7 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
 use Illuminate\Http\Request;
 use Auth;
+use App\logins;
 use App\properties;
 use App\facilities;
 use App\User;
@@ -18,12 +19,13 @@ class HomeController extends Controller
     use AuthenticatesUsers;
 
 
-    protected $redirectTo = '/home';
+   // protected $redirectTo = '/home';
 
 //     public function __construct()
 // {
 //    $this->middleware('auth');
 // }
+
 
     public function mySearch(Request $request)
     {
@@ -75,24 +77,24 @@ class HomeController extends Controller
         request()->validate([
             'email' => 'required|email',
             'password' => 'required',
-            'captcha' => 'required|captcha'
+           // 'captcha' => 'required|captcha'
         ],
         ['captcha.captcha'=>'Invalid captcha code.']);
+       
          //dd("You are here :) .");
-        $email = $request -> Input('email');
-        $password = $request -> Input('password');
-       if(Auth::attempt(['email'=>'$email','password'=>'$password']))
+         $email = $request -> input('email');
+         $password = $request -> input('password');
+        if( $user = logins::where('email','=',$email)->where('password','=',$password)->first())
+        {
+            Auth::login($user);
+            return redirect()->intended('useradmin'); 
+        }
+       else
        {
-        //User::create($request->all());
-        return redirect()->route('properties.index')
-                        ->with('success','You are logged In');
-       }
-       else{
-           return redirect('my-captcha')->with('Error','Invalid User ID and Password');
+            return redirect('sign-in')->with('Error','Invalid User ID and Password');
+            
        }
     }
-
-
     /**
      * Create a new controller instance.
      *
@@ -120,6 +122,8 @@ class HomeController extends Controller
     //  */
     public function index()
     {
-        return view('home');
+        // return view('home');
+        $properties = properties::latest()->paginate(3);
+        return view('index',compact('properties'));
     }
 }
